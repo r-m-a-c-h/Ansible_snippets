@@ -1,0 +1,4 @@
+- name: Delete a file passed as a variable
+  ansible.builtin.file:
+    path: "{{ target_file }}"
+    state: absent

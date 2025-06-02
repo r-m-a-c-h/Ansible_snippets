@@ -1,0 +1,11 @@
+- name: Restart the Agents
+  hosts: {{ agents }}
+  become: yes
+  become_method: sudo
+
+  vars_files:
+    - vault.yml
+
+  tasks:
+    - name: Restart the agents
+      ansible.builtin.shell: "shutdown -r now"

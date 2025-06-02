@@ -1,0 +1,25 @@
+- name: List all iOS simulators on connected agents
+  hosts: {{ agents }}
+  gather_facts: no
+  become: yes
+  become_method: sudo
+
+  vars_files:
+    - vault.yml
+
+  tasks:
+    - name: Get list of all simulators
+      ansible.builtin.command: xcrun simctl list devices
+      register: simctl_output
+
+    - name: Show simulator list
+      ansible.builtin.debug:
+        var: simctl_output.stdout_lines
+
+    - name: Get full simctl list
+      ansible.builtin.command: xcrun simctl list
+      register: simctl_output
+
+    - name: Show full simctl output
+      ansible.builtin.debug:
+        var: simctl_output.stdout_lines

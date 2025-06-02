@@ -1,0 +1,14 @@
+- name: Check a file passed as a variable
+  stat:
+    path: "{{ target_file }}"
+  register: file_check
+
+- name: Report file existence
+  debug:
+    msg: "{{ target_file }} File exists!"
+  when: file_check.stat.exists
+
+- name: Report file absence
+  debug:
+    msg: "{{ target_file }} File does not exist."
+  when: not file_check.stat.exists

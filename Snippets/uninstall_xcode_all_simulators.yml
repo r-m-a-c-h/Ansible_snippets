@@ -1,0 +1,59 @@
+---
+- name: Remove specific Xcode and its simulators
+  hosts: "{{ agents }}"
+  become: yes
+  vars_files:
+    - "{{ secrets }}"
+  vars:
+    xcode_app_path: "/Applications/Xcode_{{ xcode_version }}.app"
+
+  tasks:
+    - name: Check if specific Xcode is installed
+      ansible.builtin.stat:
+        path: "{{ xcode_app_path }}"
+      register: xcode_stat
+
+    - name: Delete Xcode app bundle
+      ansible.builtin.file:
+        path: "{{ xcode_app_path }}"
+        state: absent
+      when: xcode_stat.stat.exists
+
+    - name: Remove Xcode developer data (optional, frees up more space)
+      ansible.builtin.file:
+        path: "/Library/Developer/Xcode"
+        state: absent
+      ignore_errors: yes
+
+    - name: Delete all iOS simulators
+      ansible.builtin.shell: xcrun simctl delete all
+      register: simctl_delete
+      changed_when: "'Successfully deleted' in simctl_delete.stdout or simctl_delete.rc == 0"
+      failed_when: false
+
+    - name: Remove CoreSimulator device data (optional, to free space)
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - "{{ lookup('env','HOME') }}/Library/Developer/CoreSimulator/Devices"
+        - "{{ lookup('env','HOME') }}/Library/Developer/CoreSimulator/Caches"
+      ignore_errors: yes
+
+    - name: Remove Simulator runtimes (optional, advanced cleanup)
+      ansible.builtin.file:
+        path: "/Library/Developer/CoreSimulator/Profiles/Runtimes"
+        state: absent
+      ignore_errors: yes
+
+    - name: Remove Xcode logs (optional)
+      ansible.builtin.file:
+        path: "{{ lookup('env','HOME') }}/Library/Logs/CoreSimulator"
+        state: absent
+      ignore_errors: yes
+
+    - name: Print cleanup summary
+      ansible.builtin.debug:
+        msg: |
+          Xcode {{ xcode_version }} and all simulators have been deleted.
+          You may want to restart Xcode or your Mac for all changes to take effect.

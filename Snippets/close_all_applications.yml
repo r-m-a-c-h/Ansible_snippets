@@ -1,0 +1,23 @@
+- name: Close all Mac applications
+  hosts: {{ agents }}
+  become: yes
+  become_method: sudo
+
+  vars_files:
+    - vault.yml
+
+  tasks:
+    - name: Upload AppleScript to remote host
+      ansible.builtin.copy:
+        src: close_apps.applescript
+        dest: /tmp/close_apps.applescript
+        mode: '0755'
+
+    - name: Run AppleScript to close all apps
+      ansible.builtin.command: osascript /tmp/close_apps.applescript
+      ignore_errors: yes
+
+
+    - name: Wait for applications to close
+      ansible.builtin.pause:
+        seconds: 2

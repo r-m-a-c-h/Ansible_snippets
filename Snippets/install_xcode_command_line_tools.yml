@@ -1,0 +1,48 @@
+---
+- name: Install Xcode Command Line Tools on Mac
+  hosts: "{{ agents }}"
+  gather_facts: no  # Disable automatic fact gathering first Python dependency on Xcode Command Line Tools.
+  vars_files:
+    - "{{ secrets }}"
+
+  tasks:
+    - name: Check if Xcode Command Line Tools are installed
+      ansible.builtin.shell: xcode-select -p
+      register: xcode_clt_path
+      ignore_errors: yes
+      changed_when: false
+
+    - name: Trigger installation if not installed
+      ansible.builtin.shell: xcode-select --install || true
+      become: yes
+      when: xcode_clt_path.rc != 0
+      args:
+        warn: false
+
+    - name: Pause for manual installation
+      ansible.builtin.pause:
+        prompt: |
+          Please complete the Xcode installation GUI dialog.
+          Click 'Install' and wait for completion.
+          Press Enter here when done.
+      when: xcode_clt_path.rc != 0
+
+    - name: Accept Xcode license (post-install)
+      ansible.builtin.shell: xcodebuild -license accept
+      become: yes
+      become_method: sudo
+      vars:
+        ansible_become_password: "{{ ansible_become_password }}"
+      when: xcode_clt_path.rc != 0 or xcode_clt_path.stdout is not search("CommandLineTools")
+
+    - name: Verify installation
+      ansible.builtin.shell: xcode-select -p
+      register: xcode_clt_path_final
+      changed_when: false
+
+    - name: Show installation path
+      ansible.builtin.debug:
+        msg: "Xcode CLI Tools path: {{ xcode_clt_path_final.stdout }}"
+
+    - name: Gather facts after successful installation
+      ansible.builtin.setup:  # Now gather facts explicitly

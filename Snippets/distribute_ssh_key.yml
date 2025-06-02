@@ -1,0 +1,12 @@
+- name: Distribute SSH Key to Agents
+  hosts: "{{ agents }}"
+  become: false
+  vars_files:
+    - secrets.yml
+  tasks:
+    - name: Add SSH public key to authorized_keys
+      authorized_key:
+        user: user
+        state: present
+        key: "{{ lookup('file', '~/.ssh/ansible_id_rsa.pub') }}"
+

@@ -1,0 +1,26 @@
+- name: Get Java and Python versions
+  hosts: "{{ agents }}"
+  gather_facts: no
+  vars_files:
+    - "{{ secrets }}"
+  tasks:
+    - name: Get Java version
+      shell: java -version 2>&1 | grep version | awk '{print $3}' | sed 's/"//g'
+      register: java_version
+      ignore_errors: yes
+
+    - name: Show Java version
+      debug:
+        msg: "Java version: {{ java_version.stdout | default('Not installed or not found') }}"
+
+    - name: List installed Python versions
+      shell: |
+        python --version 2>&1 || true
+        python2 --version 2>&1 || true
+        python3 --version 2>&1 || true
+      register: python_versions
+
+    - name: Show installed Python versions
+      debug:
+        msg: "Python versions:\n{{ python_versions.stdout }}"
+

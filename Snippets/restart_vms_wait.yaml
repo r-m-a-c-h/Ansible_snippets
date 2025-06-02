@@ -1,0 +1,12 @@
+- name: Wait for Agetns to come back online
+  hosts: {{ agents }}
+  gather_facts: no
+
+  vars_files:
+    - vault.yml
+
+  tasks:
+    - name: Wait for SSH to become available
+      ansible.builtin.wait_for_connection:
+        timeout: 300
+        delay: 60

@@ -1,0 +1,32 @@
+- name: "Copy file {{ to_copy_file }} from source Mac to other Macs"
+  hosts: "{{ agents }}"
+  gather_facts: no
+  
+  vars:
+    file_agent: "{{ to_agent }}{{ to_copy_file }}"
+
+  tasks:
+    - name: Show ansible_user and ansible_host
+      debug:
+        msg: "User: {{ ansible_user }}, Host: {{ ansible_host }}"
+
+    - name: Check if the destination file exists
+      ansible.builtin.stat:
+        path: "{{ file_agent }}"
+      register: dest_file
+
+    - name: "Copy file {{ to_copy_file }} from source Mac to target Mac"
+      ansible.builtin.command: >
+        scp -r {{ from_host }}{{ to_copy_file }} {{ ansible_user }}@{{ ansible_host }}:{{ to_agent }}
+      delegate_to: mac-arm-host-1
+      when: not dest_file.stat.exists
+
+#    - name: Delete file
+#      include_tasks: tasks/delete_file.yml
+#      vars:
+#        target_file: "{{ file_agent }}"
+
+    - name: "Check for file {{ to_copy_file }}"
+      include_tasks: tasks/check_file.yml
+      vars:
+        target_file: "{{ file_agent }}"

@@ -1,0 +1,22 @@
+- name: Distribute SSH public key if not already present
+  hosts: {{ agents }}
+  gather_facts: no
+
+  vars:
+    ssh_key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+
+  tasks:
+    - name: Ensure .ssh directory exists
+      become: yes
+      become_user: "{{ ansible_user }}"
+      file:
+        path: "/Users/{{ ansible_user }}/.ssh"
+        state: directory
+        owner: "{{ ansible_user }}"
+        mode: '0700'
+
+    - name: Add SSH key if not present
+      authorized_key:
+        user: "{{ ansible_user }}"
+        key: "{{ ssh_key }}"
+        state: present

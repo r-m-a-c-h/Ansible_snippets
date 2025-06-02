@@ -1,0 +1,29 @@
+---
+- name: Gather system information
+  hosts: "{{ agents }}"
+  gather_facts: yes
+
+  tasks:
+    - name: Print architecture
+      debug:
+        msg: "Architecture: {{ ansible_architecture }}"
+
+    - name: Print OS version
+      debug:
+        msg: "OS Version: {{ ansible_distribution }} - {{ ansible_distribution_version }}"
+
+    - name: Print CPU count
+      debug:
+        msg: "CPU Count: {{ ansible_processor }} - {{ ansible_processor_cores }} cores per CPU"
+
+    - name: Print memory
+      debug:
+        msg: "Memory: {{ ansible_memtotal_mb }} MB"
+
+    - name: Get disk info
+      ansible.builtin.command: diskutil info /
+      register: disk_info
+
+    - name: Show disk size
+      ansible.builtin.debug:
+        msg: "{{ disk_info.stdout_lines | select('search', 'Disk Size') | list }}"

@@ -1,0 +1,56 @@
+- name: Clean up macOS and report disk usage
+  hosts: {{ agents }}
+  gather_facts: no
+  become: yes
+  become_method: sudo
+
+  vars_files:
+    - vault.yml
+
+  tasks:
+    - name: Get disk usage before cleanup
+      ansible.builtin.command: df -h /
+      register: disk_usage_before
+
+    - name: Show disk usage before cleanup
+      ansible.builtin.debug:
+        var: disk_usage_before.stdout_lines
+
+    - name: Empty the Trash for all users
+      ansible.builtin.shell: |
+        for user in /Users/*; do
+          rm -rf "$user/.Trash/"*
+        done
+
+    - name: Delete all files in Downloads folder for all users
+      ansible.builtin.shell: |
+        for user in /Users/*; do
+          rm -rf "$user/Downloads/"*
+        done
+
+    - name: Clear system cache (excluding SIP-protected files)
+      ansible.builtin.shell: |
+        find /Library/Caches -mindepth 1 -maxdepth 1 ! -name 'com.apple.*' -exec rm -rf {} + 2>/dev/null || true
+
+    - name: Clear user caches (skip protected files)
+      ansible.builtin.shell: |
+        for user in /Users/*; do
+          find "$user/Library/Caches" -mindepth 1 -maxdepth 1 -exec rm -rf {} + 2>/dev/null || true
+        done
+
+    - name: Remove system temporary files
+      ansible.builtin.shell: rm -rf /private/tmp/*
+
+    - name: Remove user temporary files
+      ansible.builtin.shell: |
+        for user in /Users/*; do
+          rm -rf "$user/tmp/"*
+        done
+
+    - name: Get disk usage after cleanup
+      ansible.builtin.command: df -h /
+      register: disk_usage_after
+
+    - name: Show disk usage after cleanup
+      ansible.builtin.debug:
+        var: disk_usage_after.stdout_lines
